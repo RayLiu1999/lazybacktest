@@ -214,8 +214,13 @@ def calculate_yearly_returns(equity_curve: pd.Series) -> dict[int, float]:
     if equity_curve.empty:
         return {}
     
+    # 確保 index 是 DatetimeIndex
+    if not isinstance(equity_curve.index, pd.DatetimeIndex):
+        equity_curve = equity_curve.copy()
+        equity_curve.index = pd.to_datetime(equity_curve.index)
+    
     result = {}
-    years = equity_curve.index.to_series().dt.year.unique()
+    years = equity_curve.index.year.unique()
     
     for year in years:
         year_data = equity_curve[equity_curve.index.year == year]
@@ -239,6 +244,11 @@ def calculate_monthly_returns(equity_curve: pd.Series) -> list[dict]:
     """
     if equity_curve.empty:
         return []
+    
+    # 確保 index 是 DatetimeIndex
+    if not isinstance(equity_curve.index, pd.DatetimeIndex):
+        equity_curve = equity_curve.copy()
+        equity_curve.index = pd.to_datetime(equity_curve.index)
     
     result = []
     

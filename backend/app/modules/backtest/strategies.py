@@ -13,11 +13,44 @@ class StrategyRegistry:
         "BOLLINGER_BREAKOUT": ["period", "std_dev"],
         "PRICE_BREAKOUT": ["period"],
     }
+    
+    # 策略名稱別名 (支援簡短名稱)
+    _ALIASES = {
+        "RSI": "RSI_OVERSOLD",
+        "MACD": "MACD_CROSS",
+        "KD": "KD_CROSS",
+        "BOLLINGER": "BOLLINGER_BREAKOUT",
+        "SMA": "SMA_CROSS",
+    }
+    
+    # 參數名稱別名 (支援不同命名慣例)
+    _PARAM_ALIASES = {
+        "oversold": "threshold",
+        "overbought": "threshold",
+        "fast": "fast_period",
+        "slow": "slow_period",
+        "signal": "signal_period",
+    }
 
     @classmethod
     def get_all_strategy_names(cls) -> list[str]:
         """獲取所有支持的策略名稱"""
         return list(cls._STRATEGIES.keys())
+    
+    @classmethod
+    def _normalize_strategy_name(cls, name: str) -> str:
+        """將別名轉換為正式策略名稱"""
+        name = name.upper()
+        return cls._ALIASES.get(name, name)
+    
+    @classmethod
+    def _normalize_params(cls, params: dict) -> dict:
+        """將參數別名轉換為正式參數名稱"""
+        normalized = {}
+        for key, value in params.items():
+            norm_key = cls._PARAM_ALIASES.get(key, key)
+            normalized[norm_key] = value
+        return normalized
 
     @classmethod
     def get_signals(
@@ -34,6 +67,10 @@ class StrategyRegistry:
         Returns:
             Tuple[pd.Series, pd.Series]: (進場訊號, 出場訊號)
         """
+        # 正規化策略名稱和參數
+        strategy_name = cls._normalize_strategy_name(strategy_name)
+        params = cls._normalize_params(params)
+        
         if strategy_name not in cls._STRATEGIES:
             raise ValueError(f"Unknown strategy: {strategy_name}")
 
