@@ -57,7 +57,14 @@ function App() {
       case 'LOGS':
         return <TradeLogsTab result={result} />;
       case 'OPTIMIZATION':
-        return <OptimizationTab />;
+        return (
+          <OptimizationTab
+            ticker={lastRequest.ticker}
+            startDate={lastRequest.start_date}
+            endDate={lastRequest.end_date}
+            initialCapital={lastRequest.initial_capital}
+          />
+        );
       case 'BATCH':
         return <div className="text-gray-500 text-center py-10">批量優化功能開發中...</div>;
       default:
