@@ -101,7 +101,15 @@ class StockRepository:
         prices = result.scalars().all()
         
         if not prices:
-            # Fallback: 嘗試讀取 CSV 檔案 (for development/demo)
+            # Fallback 1: 嘗試使用 yfinance 即時抓取
+            from app.modules.stock_data.fetcher import StockDataFetcher
+            fetcher = StockDataFetcher()
+            df = fetcher.fetch(ticker, str(start_date), str(end_date))
+            
+            if not df.empty:
+                return df
+            
+            # Fallback 2: 嘗試讀取 CSV 檔案 (for development/demo)
             import os
             csv_path = os.path.join(
                 os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),

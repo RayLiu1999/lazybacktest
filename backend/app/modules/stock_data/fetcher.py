@@ -1,10 +1,10 @@
 """
 股價資料抓取模組
 
-負責從外部 API 抓取股價歷史資料並正規化。
-目前支援來源：FinMind
+使用 yfinance 抓取台股與全球股價資料。
+台股代碼需加上 .TW 後綴 (例: 2330.TW)
 """
-import httpx
+import yfinance as yf
 import pandas as pd
 from datetime import date
 from dataclasses import dataclass
@@ -23,67 +23,81 @@ class StockData:
 
 class StockDataFetcher:
     """
-    股價抓取服務
+    股價抓取服務 (yfinance 版本)
+    
+    支援台股 (需加 .TW) 與全球股票。
     """
     
-    BASE_URL = "https://api.finmindtrade.com/api/v4/data"
-    
-    async def fetch_data(self, ticker: str, start_date: date, end_date: date) -> pd.DataFrame:
+    def fetch(self, ticker: str, start_date: str, end_date: str) -> pd.DataFrame:
         """
-        抓取指定期間的股價資料
+        同步抓取指定期間的股價資料
         
         Args:
-            ticker: 股票代碼 (Ex: 2330)
-            start_date: 開始日期
-            end_date: 結束日期
+            ticker: 股票代碼 (Ex: 2330 或 2330.TW 或 AAPL)
+            start_date: 開始日期 (YYYY-MM-DD)
+            end_date: 結束日期 (YYYY-MM-DD)
             
         Returns:
             pd.DataFrame: 包含 open, high, low, close, volume 的 DataFrame，index 為 date
-            
-        Raises:
-            ValueError: 查無資料
-            ConnectionError: API 連線失敗
         """
-        params = {
-            "dataset": "TaiwanStockPrice",
-            "data_id": ticker,
-            "start_date": start_date.strftime("%Y-%m-%d"),
-            "end_date": end_date.strftime("%Y-%m-%d")
-        }
+        # 自動補上台股後綴
+        yf_ticker = self._normalize_ticker(ticker)
         
         try:
-            async with httpx.AsyncClient() as client:
-                response = await client.get(self.BASE_URL, params=params)
-                
-                if response.status_code != 200:
-                    raise ConnectionError(f"API Error: {response.status_code}")
-                
-                data = response.json()
-                
-        except httpx.RequestError as e:
-            raise ConnectionError(f"Network error: {str(e)}")
+            stock = yf.Ticker(yf_ticker)
+            df = stock.history(start=start_date, end=end_date)
             
-        if "data" not in data or not data["data"]:
-            raise ValueError(f"No data found for {ticker}")
+            if df.empty:
+                return pd.DataFrame()
             
-        df = pd.DataFrame(data["data"])
+            # yfinance 欄位: Open, High, Low, Close, Volume, Dividends, Stock Splits
+            df = df.rename(columns={
+                "Open": "open",
+                "High": "high",
+                "Low": "low",
+                "Close": "close",
+                "Volume": "volume"
+            })
+            
+            # 選取需要的欄位
+            df = df[["open", "high", "low", "close", "volume"]]
+            
+            # 確保 index 名稱統一
+            df.index.name = "date"
+            
+            return df
+            
+        except Exception as e:
+            print(f"yfinance fetch error for {yf_ticker}: {e}")
+            return pd.DataFrame()
+    
+    async def fetch_data(self, ticker: str, start_date: date, end_date: date) -> pd.DataFrame:
+        """
+        非同步版本 (向後兼容)
         
-        # 資料清洗與重命名
-        # FinMind 欄位: date, stock_id, Trading_Volume, Trading_money, open, max, min, close, spread, Trading_turnover
+        注意: yfinance 本身是同步的，這裡直接呼叫同步方法。
+        """
+        return self.fetch(
+            ticker,
+            start_date.strftime("%Y-%m-%d"),
+            end_date.strftime("%Y-%m-%d")
+        )
+    
+    def _normalize_ticker(self, ticker: str) -> str:
+        """
+        正規化股票代碼
         
-        df = df.rename(columns={
-            "max": "high",
-            "min": "low",
-            "Trading_Volume": "volume"
-        })
+        台股代碼 (純數字) 自動加上 .TW 後綴
+        """
+        ticker = ticker.strip().upper()
         
-        # 轉換日期索引
-        df["date"] = pd.to_datetime(df["date"])
-        df.set_index("date", inplace=True)
+        # 如果已經有後綴，直接返回
+        if "." in ticker:
+            return ticker
         
-        # 確保數值型別
-        numeric_cols = ["open", "high", "low", "close", "volume"]
-        df[numeric_cols] = df[numeric_cols].apply(pd.to_numeric, errors='coerce')
+        # 純數字視為台股，加上 .TW
+        if ticker.isdigit():
+            return f"{ticker}.TW"
         
-        # 選取需要的欄位
-        return df[["open", "high", "low", "close", "volume"]]
+        # 其他情況視為國際股票，直接返回
+        return ticker
