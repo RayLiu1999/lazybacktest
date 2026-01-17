@@ -28,6 +28,7 @@ class TestBacktestAPI:
         yield repo
         app.dependency_overrides.clear()
 
+
     def test_run_backtest_success(self, mock_repo):
         """測試成功執行回測"""
         # 1. Mock 股價資料
@@ -44,18 +45,15 @@ class TestBacktestAPI:
         df = pd.DataFrame(data, index=index)
         mock_repo.get_stock_data.return_value = df
         
-        # 2. 請求 Paylaod
+        # 2. 請求 Payload (新版 strategy_settings 格式)
         payload = {
             "ticker": "2330",
             "start_date": "2024-01-01",
             "end_date": "2024-01-05",
             "initial_capital": 100000,
-            "strategy": {
-                "name": "sma_crossover",
-                "params": {
-                    "short_period": 2,
-                    "long_period": 5
-                }
+            "strategy_settings": {
+                "entry_strategy": "SMA_CROSS",
+                "entry_params": {"short_period": 2, "long_period": 5}
             }
         }
         
@@ -78,7 +76,10 @@ class TestBacktestAPI:
             "ticker": "2330",
             "start_date": "2024-01-01",
             "end_date": "2024-01-05",
-            "strategy": {"name": "test"}
+            "strategy_settings": {
+                "entry_strategy": "SMA_CROSS",
+                "entry_params": {"short_period": 5, "long_period": 20}
+            }
         }
         
         response = client.post("/api/v1/backtest/run", json=payload)

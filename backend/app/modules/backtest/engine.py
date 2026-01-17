@@ -27,6 +27,9 @@ class BacktestConfig:
         tax: 證券交易稅率 (預設 0.3%)
         stop_loss: 停損比例 (預設 None 表示不啟用)
         take_profit: 停利比例 (預設 None 表示不啟用)
+        timing: 交易時機 (N_CLOSE = 當日收盤, N1_OPEN = 隔日開盤)
+        position_pct: 單次投入比例 (預設 100%)
+        position_basis: 倉位基準 (INITIAL_CAPITAL / TOTAL_CAPITAL)
     """
     initial_capital: float
     ticker: str
@@ -35,6 +38,9 @@ class BacktestConfig:
     tax: float = 0.003
     stop_loss: Optional[float] = None
     take_profit: Optional[float] = None
+    timing: str = "N_CLOSE"  # N_CLOSE or N1_OPEN
+    position_pct: float = 100.0
+    position_basis: str = "INITIAL_CAPITAL"  # INITIAL_CAPITAL or TOTAL_CAPITAL
 
 
 @dataclass
@@ -234,6 +240,15 @@ class BacktestEngine:
         """計算當前總權益"""
         return self.cash + self.position * current_price
 
+    def _get_available_capital(self, current_price: float) -> float:
+        """計算可用於交易的資金，依據 position_pct 和 position_basis"""
+        if self.config.position_basis == "INITIAL_CAPITAL":
+            base = self.config.initial_capital
+        else:  # TOTAL_CAPITAL
+            base = self._calculate_equity(current_price)
+        
+        return base * (self.config.position_pct / 100.0)
+
     def run(
         self,
         data: pd.DataFrame,
@@ -252,6 +267,8 @@ class BacktestEngine:
             BacktestResult: 回測結果
         """
         equity_curve = []
+        pending_entry = False  # 追蹤是否有待執行的進場
+        pending_exit = False   # 追蹤是否有待執行的出場
         
         # 使用 enumerate 來獲取整數索引 i，同時迭代行
         for i, (index_val, row) in enumerate(data.iterrows()):
@@ -261,36 +278,58 @@ class BacktestEngine:
             elif isinstance(index_val, (datetime, pd.Timestamp)):
                 date = index_val
             else:
-                # Fallback: 如果無法從 index 取得日期，則假設是連續日，需謹慎
-                # 這裡簡單假設 index_val 是日期字串
                 date = pd.to_datetime(index_val)
 
             close = row['close']
+            open_price = row['open']
+            
+            # N1_OPEN: 執行昨日的待辦訂單
+            if self.config.timing == "N1_OPEN":
+                if pending_exit and self.position > 0:
+                    self.sell(open_price, self.position, date)
+                    pending_exit = False
+                if pending_entry and self.position == 0:
+                    available = self._get_available_capital(open_price)
+                    max_quantity = int(available / (open_price * (1 + self.config.buy_fee)))
+                    max_quantity = (max_quantity // 100) * 100
+                    if max_quantity > 0:
+                        self.buy(open_price, max_quantity, date)
+                    pending_entry = False
             
             # 檢查停損停利
             if self.position > 0:
                 if self.check_stop_loss(close):
-                    self.sell(close, self.position, date)
+                    if self.config.timing == "N_CLOSE":
+                        self.sell(close, self.position, date)
+                    else:
+                        pending_exit = True
                 elif self.check_take_profit(close):
-                    self.sell(close, self.position, date)
+                    if self.config.timing == "N_CLOSE":
+                        self.sell(close, self.position, date)
+                    else:
+                        pending_exit = True
                 elif exit_signal.iloc[i]:
-                    self.sell(close, self.position, date)
+                    if self.config.timing == "N_CLOSE":
+                        self.sell(close, self.position, date)
+                    else:
+                        pending_exit = True
             
             # 檢查進場訊號
-            if self.position == 0 and entry_signal.iloc[i]:
-                # 計算可買數量（簡化：使用全部資金）
-                max_quantity = int(self.cash / (close * (1 + self.config.buy_fee)))
-                if max_quantity > 0:
-                    # 調整為整百股（台股交易單位）
+            if self.position == 0 and entry_signal.iloc[i] and not pending_entry:
+                if self.config.timing == "N_CLOSE":
+                    available = self._get_available_capital(close)
+                    max_quantity = int(available / (close * (1 + self.config.buy_fee)))
                     max_quantity = (max_quantity // 100) * 100
                     if max_quantity > 0:
                         self.buy(close, max_quantity, date)
+                else:
+                    pending_entry = True
             
             # 記錄權益
             equity_curve.append(self._calculate_equity(close))
     
         # 計算權益曲線
-        equity_serie = pd.Series(equity_curve)
+        equity_serie = pd.Series(equity_curve, index=data.index)
         
         # 處理無交易或無資料的情況
         if equity_serie.empty:
@@ -298,7 +337,7 @@ class BacktestEngine:
             total_return = 0.0
             cagr = 0.0
             max_drawdown = 0.0
-            equity_serie = pd.Series([self.config.initial_capital] * len(data))
+            equity_serie = pd.Series([self.config.initial_capital] * len(data), index=data.index)
         else:
             final_capital = equity_serie.iloc[-1]
             total_return = (final_capital - self.config.initial_capital) / self.config.initial_capital

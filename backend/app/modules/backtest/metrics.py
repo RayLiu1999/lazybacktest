@@ -199,3 +199,80 @@ def calculate_average_trade(profits: list[float]) -> float:
         return 0.0
     
     return sum(profits) / len(profits)
+
+
+def calculate_yearly_returns(equity_curve: pd.Series) -> dict[int, float]:
+    """
+    計算年度報酬率
+    
+    Args:
+        equity_curve: 權益曲線 (index 為 datetime)
+        
+    Returns:
+        dict[int, float]: {年份: 報酬率}
+    """
+    if equity_curve.empty:
+        return {}
+    
+    result = {}
+    years = equity_curve.index.to_series().dt.year.unique()
+    
+    for year in years:
+        year_data = equity_curve[equity_curve.index.year == year]
+        if len(year_data) >= 2:
+            start_val = year_data.iloc[0]
+            end_val = year_data.iloc[-1]
+            result[int(year)] = (end_val - start_val) / start_val
+    
+    return result
+
+
+def calculate_monthly_returns(equity_curve: pd.Series) -> list[dict]:
+    """
+    計算月度報酬率
+    
+    Args:
+        equity_curve: 權益曲線 (index 為 datetime)
+        
+    Returns:
+        list[dict]: [{"year": 2024, "month": 1, "return": 0.05}, ...]
+    """
+    if equity_curve.empty:
+        return []
+    
+    result = []
+    
+    # 按年月分組
+    grouped = equity_curve.groupby([
+        equity_curve.index.year,
+        equity_curve.index.month
+    ])
+    
+    for (year, month), group in grouped:
+        if len(group) >= 2:
+            start_val = group.iloc[0]
+            end_val = group.iloc[-1]
+            monthly_return = (end_val - start_val) / start_val
+            result.append({
+                "year": int(year),
+                "month": int(month),
+                "return": float(monthly_return)
+            })
+    
+    return result
+
+
+def calculate_buy_hold_return(data: pd.DataFrame) -> float:
+    """
+    計算買入持有報酬率
+    
+    Args:
+        data: 股價數據 (需包含 close 欄位)
+        
+    Returns:
+        float: 買入持有報酬率
+    """
+    if data.empty or len(data) < 2:
+        return 0.0
+    
+    return (data['close'].iloc[-1] / data['close'].iloc[0]) - 1
