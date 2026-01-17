@@ -18,8 +18,11 @@ app = FastAPI(
 
 # CORS 設定
 origins = [
-    "http://localhost:3000",  # React Dev Server
+    "http://localhost:3000",  # React Dev Server (CRA)
+    "http://localhost:5173",  # Vite Dev Server
     "http://localhost:8000",
+    "http://127.0.0.1:5173",
+    "http://127.0.0.1:8000",
 ]
 
 app.add_middleware(
