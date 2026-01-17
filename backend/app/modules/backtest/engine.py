@@ -134,7 +134,8 @@ class BacktestEngine:
         
         # 檢查資金是否足夠
         if total_cost > self.cash:
-            raise ValueError(f"Insufficient funds: need {total_cost}, have {self.cash}")
+            # 資金不足，跳過此次買入
+            return False
         
         # 執行買入
         self.cash -= total_cost

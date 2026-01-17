@@ -107,6 +107,12 @@ class StockRepository:
             df = fetcher.fetch(ticker, str(start_date), str(end_date))
             
             if not df.empty:
+                # Auto-cache: 儲存到資料庫供下次使用
+                try:
+                    self.save_stock_data(ticker, df)
+                except Exception as e:
+                    # 快取失敗不影響回傳結果
+                    print(f"Cache save failed for {ticker}: {e}")
                 return df
             
             # Fallback 2: 嘗試讀取 CSV 檔案 (for development/demo)
