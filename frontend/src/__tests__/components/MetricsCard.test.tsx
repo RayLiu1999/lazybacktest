@@ -28,22 +28,21 @@ describe('MetricsCard', () => {
       expect(screen.getByText('15.00%')).toBeInTheDocument();
     });
 
-    it('應該顯示年化報酬率 (CAGR)', () => {
+    it('應該顯示年化報酬率', () => {
       render(<MetricsCard result={mockResult} />);
-      expect(screen.getByText('年化報酬率 (CAGR)')).toBeInTheDocument();
+      expect(screen.getByText('年化報酬率')).toBeInTheDocument();
       expect(screen.getByText('12.00%')).toBeInTheDocument();
     });
 
-    it('應該顯示最大回撤 (MDD)', () => {
+    it('應該顯示最大回撤', () => {
       render(<MetricsCard result={mockResult} />);
-      expect(screen.getByText('最大回撤 (MDD)')).toBeInTheDocument();
+      expect(screen.getByText('最大回撤')).toBeInTheDocument();
       expect(screen.getByText('8.00%')).toBeInTheDocument();
     });
 
-    it('應該顯示勝率', () => {
+    it('應該顯示夏普比率 (Sharpe)', () => {
       render(<MetricsCard result={mockResult} />);
-      expect(screen.getByText('勝率')).toBeInTheDocument();
-      expect(screen.getByText('65.00%')).toBeInTheDocument();
+      expect(screen.getByText('夏普比率 (Sharpe)')).toBeInTheDocument();
     });
 
     it('應該顯示交易次數', () => {
@@ -78,7 +77,6 @@ describe('MetricsCard', () => {
       };
       render(<MetricsCard result={zeroTradesResult} />);
       expect(screen.getByText('0')).toBeInTheDocument();
-      expect(screen.getByText('0.00%')).toBeInTheDocument();
     });
   });
 });

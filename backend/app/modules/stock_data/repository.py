@@ -37,15 +37,15 @@ class StockRepository:
         for index, row in df.iterrows():
             ensure_date = index.date() if isinstance(index, pd.Timestamp) else index
             
-            # 建立 StockPrice 物件
+            # 建立 StockPrice 物件 (確保轉換 numpy 類型為 Python 原生類型)
             price = StockPrice(
                 ticker=ticker,
                 date=ensure_date,
-                open=row['open'],
-                high=row['high'],
-                low=row['low'],
-                close=row['close'],
-                volume=row['volume']
+                open=float(row['open']),
+                high=float(row['high']),
+                low=float(row['low']),
+                close=float(row['close']),
+                volume=int(row['volume'])
             )
             stock_prices.append(price)
             

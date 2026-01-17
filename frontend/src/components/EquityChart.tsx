@@ -11,33 +11,41 @@ import {
 } from 'recharts';
 
 interface EquityChartProps {
-  data: number[];
+  data: { date: string; equity: number; drawdown: number }[];
   initialCapital: number;
 }
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ value: number }>;
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+        <p className="text-gray-500 text-xs mb-1">交易日 #{label}</p>
+        <p className="text-teal-600 font-bold">
+          ${Number(payload[0].value).toLocaleString()}
+        </p>
+      </div>
+    );
+  }
+  return null;
+};
+
 const EquityChart: React.FC<EquityChartProps> = ({ data, initialCapital }) => {
-  const chartData = data.map((value, index) => ({
+  const chartData = data.map((item, index) => ({
     day: index + 1,
-    equity: value,
+    date: item.date,
+    equity: item.equity,
   }));
 
-  const minEquity = Math.min(...data);
-  const maxEquity = Math.max(...data);
+  const equities = data.map(d => d.equity);
+  const minEquity = Math.min(...equities);
+  const maxEquity = Math.max(...equities);
   const padding = (maxEquity - minEquity) * 0.1 || 1000;
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-          <p className="text-gray-500 text-xs mb-1">交易日 #{label}</p>
-          <p className="text-teal-600 font-bold">
-            ${Number(payload[0].value).toLocaleString()}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
 
   return (
     <div className="h-80 w-full">

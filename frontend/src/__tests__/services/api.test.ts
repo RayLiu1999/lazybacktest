@@ -53,9 +53,18 @@ describe('API Service', () => {
         total_trades: 10,
         final_capital: 115000,
         trades: [],
-        equity_curve: [100000, 115000],
+        equity_curve: [{ date: '2024-01-01', equity: 100000, drawdown: 0 }, { date: '2024-12-31', equity: 115000, drawdown: 0 }],
       };
-      mockPost.mockResolvedValueOnce({ data: mockResult });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (mockPost as any).mockResolvedValueOnce({
+        ok: true,
+        json: async () => mockResult
+      });
+      // Mock global fetch for runBacktest which uses fetch
+      global.fetch = vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => mockResult
+      });
 
       const { runBacktest } = await import('../../services/api');
       const request: BacktestRequest = {
@@ -63,12 +72,34 @@ describe('API Service', () => {
         start_date: '2024-01-01',
         end_date: '2024-12-31',
         initial_capital: 100000,
-        strategy: { name: 'sma_crossover', params: { short_period: 5, long_period: 20 } },
+        trading_settings: {
+          timing: 'N_CLOSE',
+          buy_fee: 0.001425,
+          sell_fee: 0.004425,
+          tax: 0.003
+        },
+        risk_settings: {
+          position_basis: 'INITIAL_CAPITAL',
+          position_pct: 100
+        },
+        strategy_settings: {
+          entry_strategy: 'SMA_CROSS',
+          entry_params: { short_period: 5, long_period: 20 },
+          exit_strategy: 'SAME_AS_ENTRY',
+          exit_params: {}
+        }
       };
 
       const result = await runBacktest(request);
 
-      expect(mockPost).toHaveBeenCalledWith('/api/v1/backtest/run', request);
+      // Verify fetch call arguments for transformed payload
+      expect(global.fetch).toHaveBeenCalledWith(
+        expect.stringContaining('/backtest/run'),
+        expect.objectContaining({
+          method: 'POST',
+          body: expect.stringContaining('"ticker":"2330"')
+        })
+      );
       expect(result.total_return).toBe(0.15);
       expect(result.final_capital).toBe(115000);
     });

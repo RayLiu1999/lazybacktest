@@ -1,17 +1,22 @@
 """
 資料庫連線核心模組
 """
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, DeclarativeBase
 
-# 為了簡單起見，如果是測試或開發，這裡可以設定預設值
-# 實際生產環境應從環境變數讀取
-SQLALCHEMY_DATABASE_URL = "sqlite:///./sql_app.db"
-# SQLALCHEMY_DATABASE_URL = "postgresql://user:password@postgresserver/db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}  # 僅 SQLite 需要
+# 從環境變數讀取資料庫連線字串，預設使用 SQLite (開發用)
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "sqlite:///./sql_app.db"
 )
+
+# 根據資料庫類型調整連線參數
+connect_args = {}
+if DATABASE_URL.startswith("sqlite"):
+    connect_args = {"check_same_thread": False}
+
+engine = create_engine(DATABASE_URL, connect_args=connect_args)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
@@ -27,3 +32,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def init_db():
+    """初始化資料庫 (建立所有資料表)"""
+    from app.models.stock import StockPrice  # noqa: F401
+    Base.metadata.create_all(bind=engine)

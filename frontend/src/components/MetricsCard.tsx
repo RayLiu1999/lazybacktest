@@ -13,7 +13,7 @@ const MetricsCard: React.FC<MetricsCardProps> = ({ result }) => {
     { label: '總報酬率', value: formatPercent(result.total_return), positive: result.total_return >= 0 },
     { label: '年化報酬率', value: formatPercent(result.cagr), positive: result.cagr >= 0 },
     { label: '最大回撤', value: formatPercent(result.max_drawdown), positive: false },
-    { label: '夏普比率', value: '1.25', positive: true },
+    { label: '夏普比率 (Sharpe)', value: result.sharpe_ratio ? result.sharpe_ratio.toFixed(2) : '-', positive: true },
     { label: '交易次數', value: result.total_trades.toString(), neutral: true },
     { label: '最終資金', value: formatCurrency(result.final_capital), positive: result.final_capital >= 100000 },
   ];
@@ -28,7 +28,7 @@ const MetricsCard: React.FC<MetricsCardProps> = ({ result }) => {
           <div key={metric.label} className="bg-white p-4">
             <div className="text-xs text-gray-500 mb-1">{metric.label}</div>
             <div className={`text-xl font-bold ${metric.neutral ? 'text-gray-800' :
-                metric.positive ? 'text-green-600' : 'text-red-600'
+              metric.positive ? 'text-green-600' : 'text-red-600'
               }`}>
               {metric.value}
             </div>
