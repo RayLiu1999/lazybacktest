@@ -9,7 +9,6 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
-import './EquityChart.css';
 
 interface EquityChartProps {
   data: number[];
@@ -17,11 +16,9 @@ interface EquityChartProps {
 }
 
 const EquityChart: React.FC<EquityChartProps> = ({ data, initialCapital }) => {
-  // 轉換數據格式
   const chartData = data.map((value, index) => ({
     day: index + 1,
     equity: value,
-    returnPct: ((value - initialCapital) / initialCapital) * 100,
   }));
 
   const minEquity = Math.min(...data);
@@ -29,8 +26,8 @@ const EquityChart: React.FC<EquityChartProps> = ({ data, initialCapital }) => {
   const padding = (maxEquity - minEquity) * 0.1;
 
   return (
-    <div className="equity-chart">
-      <h3>📈 權益曲線</h3>
+    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6">
+      <h3 className="text-cyan-400 text-lg font-semibold mb-4">📈 權益曲線</h3>
       <ResponsiveContainer width="100%" height={300}>
         <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
           <defs>
@@ -42,34 +39,31 @@ const EquityChart: React.FC<EquityChartProps> = ({ data, initialCapital }) => {
           <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
           <XAxis
             dataKey="day"
-            stroke="#8b8b8b"
-            tick={{ fill: '#8b8b8b' }}
-            label={{ value: '交易日', position: 'insideBottomRight', offset: -5, fill: '#8b8b8b' }}
+            stroke="#64748b"
+            tick={{ fill: '#64748b' }}
+            label={{ value: '交易日', position: 'insideBottomRight', offset: -5, fill: '#64748b' }}
           />
           <YAxis
-            stroke="#8b8b8b"
-            tick={{ fill: '#8b8b8b' }}
+            stroke="#64748b"
+            tick={{ fill: '#64748b' }}
             domain={[minEquity - padding, maxEquity + padding]}
             tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
           />
           <Tooltip
             contentStyle={{
-              background: 'rgba(26, 26, 46, 0.95)',
+              background: 'rgba(15, 23, 42, 0.95)',
               border: '1px solid rgba(0, 217, 255, 0.3)',
               borderRadius: '8px',
               color: '#fff',
             }}
-            formatter={(value) => [
-              `$${Number(value).toLocaleString()}`,
-              '權益',
-            ]}
+            formatter={(value) => [`$${Number(value).toLocaleString()}`, '權益']}
             labelFormatter={(label) => `第 ${label} 天`}
           />
           <ReferenceLine
             y={initialCapital}
-            stroke="#ff6b6b"
+            stroke="#f87171"
             strokeDasharray="5 5"
-            label={{ value: '初始資金', fill: '#ff6b6b', fontSize: 12 }}
+            label={{ value: '初始資金', fill: '#f87171', fontSize: 12 }}
           />
           <Line
             type="monotone"

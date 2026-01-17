@@ -101,6 +101,18 @@ class StockRepository:
         prices = result.scalars().all()
         
         if not prices:
+            # Fallback: 嘗試讀取 CSV 檔案 (for development/demo)
+            import os
+            csv_path = os.path.join(
+                os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))),
+                "scripts",
+                f"seed_data_{ticker}.csv"
+            )
+            if os.path.exists(csv_path):
+                df = pd.read_csv(csv_path, index_col=0, parse_dates=True)
+                # 過濾日期範圍
+                df = df[(df.index >= pd.Timestamp(start_date)) & (df.index <= pd.Timestamp(end_date))]
+                return df
             return pd.DataFrame()
             
         # 轉換為 DataFrame

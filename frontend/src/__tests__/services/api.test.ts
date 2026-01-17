@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { BacktestRequest, BacktestResult, StockPrice } from '../../types/api';
 
 // 模擬 axios 模組

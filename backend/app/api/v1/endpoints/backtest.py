@@ -102,12 +102,12 @@ def run_backtest(
         "final_capital": result.final_capital,
         "trades": [
             {
-                "date": t.date,
-                "type": t.type.value,
+                "date": t.date.strftime("%Y-%m-%d") if hasattr(t.date, 'strftime') else str(t.date),
+                "type": t.action,  # Trade uses 'action' not 'type'
                 "price": t.price,
                 "quantity": t.quantity,
                 "profit": t.profit
             } for t in result.trades
         ],
-        "equity_curve": result.equity_curve
+        "equity_curve": result.equity_curve.tolist() if hasattr(result.equity_curve, 'tolist') else list(result.equity_curve)
     }
