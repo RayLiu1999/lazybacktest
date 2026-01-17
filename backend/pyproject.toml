@@ -1,0 +1,40 @@
+[project]
+name = "lazybacktest"
+version = "0.1.0"
+description = "台股回測系統 - 透過歷史數據驗證交易策略"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.109.0",
+    "uvicorn>=0.27.0",
+    "pydantic>=2.5.0",
+    "pandas>=2.1.0",
+    "numpy>=1.26.0",
+    "sqlalchemy>=2.0.0",
+    "psycopg2-binary>=2.9.9",
+    "redis>=5.0.0",
+    "httpx>=0.26.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_functions = ["test_*"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
