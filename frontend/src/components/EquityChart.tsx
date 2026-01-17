@@ -23,55 +23,52 @@ const EquityChart: React.FC<EquityChartProps> = ({ data, initialCapital }) => {
 
   const minEquity = Math.min(...data);
   const maxEquity = Math.max(...data);
-  const padding = (maxEquity - minEquity) * 0.1;
+  const padding = (maxEquity - minEquity) * 0.1 || 1000;
+
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+          <p className="text-gray-500 text-xs mb-1">交易日 #{label}</p>
+          <p className="text-teal-600 font-bold">
+            ${Number(payload[0].value).toLocaleString()}
+          </p>
+        </div>
+      );
+    }
+    return null;
+  };
 
   return (
-    <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-6">
-      <h3 className="text-cyan-400 text-lg font-semibold mb-4">📈 權益曲線</h3>
-      <ResponsiveContainer width="100%" height={300}>
-        <LineChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <defs>
-            <linearGradient id="equityGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="5%" stopColor="#00d9ff" stopOpacity={0.3} />
-              <stop offset="95%" stopColor="#00d9ff" stopOpacity={0} />
-            </linearGradient>
-          </defs>
-          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+    <div className="h-80 w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <LineChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" vertical={false} />
           <XAxis
             dataKey="day"
-            stroke="#64748b"
-            tick={{ fill: '#64748b' }}
-            label={{ value: '交易日', position: 'insideBottomRight', offset: -5, fill: '#64748b' }}
+            stroke="#9ca3af"
+            tick={{ fill: '#6b7280', fontSize: 11 }}
+            tickLine={false}
+            axisLine={false}
           />
           <YAxis
-            stroke="#64748b"
-            tick={{ fill: '#64748b' }}
+            stroke="#9ca3af"
+            tick={{ fill: '#6b7280', fontSize: 11 }}
             domain={[minEquity - padding, maxEquity + padding]}
-            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}K`}
+            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+            tickLine={false}
+            axisLine={false}
+            width={55}
           />
-          <Tooltip
-            contentStyle={{
-              background: 'rgba(15, 23, 42, 0.95)',
-              border: '1px solid rgba(0, 217, 255, 0.3)',
-              borderRadius: '8px',
-              color: '#fff',
-            }}
-            formatter={(value) => [`$${Number(value).toLocaleString()}`, '權益']}
-            labelFormatter={(label) => `第 ${label} 天`}
-          />
-          <ReferenceLine
-            y={initialCapital}
-            stroke="#f87171"
-            strokeDasharray="5 5"
-            label={{ value: '初始資金', fill: '#f87171', fontSize: 12 }}
-          />
+          <Tooltip content={<CustomTooltip />} />
+          <ReferenceLine y={initialCapital} stroke="#ef4444" strokeDasharray="3 3" />
           <Line
             type="monotone"
             dataKey="equity"
-            stroke="#00d9ff"
+            stroke="#0d9488"
             strokeWidth={2}
             dot={false}
-            fill="url(#equityGradient)"
+            activeDot={{ r: 4, fill: '#0d9488', stroke: '#fff', strokeWidth: 2 }}
           />
         </LineChart>
       </ResponsiveContainer>
