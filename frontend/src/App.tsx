@@ -53,7 +53,7 @@ function App() {
       case 'SUMMARY':
         return <SummaryTab result={result} initialCapital={lastRequest.initial_capital} />;
       case 'PERFORMANCE':
-        return <PerformanceTab />;
+        return <PerformanceTab result={result} />;
       case 'LOGS':
         return <TradeLogsTab result={result} />;
       case 'OPTIMIZATION':

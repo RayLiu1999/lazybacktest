@@ -68,9 +68,10 @@ const RiskManagement: React.FC<RiskManagementProps> = ({ settings, onChange }) =
             <input
               type="number"
               min="0"
+              step="0.01"
               placeholder="無"
-              value={settings.stop_loss_pct || ''}
-              onChange={(e) => onChange({ stop_loss_pct: e.target.value ? Number(e.target.value) : undefined })}
+              value={settings.stop_loss !== undefined ? settings.stop_loss * 100 : ''}
+              onChange={(e) => onChange({ stop_loss: e.target.value ? Number(e.target.value) / 100 : undefined })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
             />
           </div>
@@ -83,9 +84,10 @@ const RiskManagement: React.FC<RiskManagementProps> = ({ settings, onChange }) =
             <input
               type="number"
               min="0"
+              step="0.01"
               placeholder="無"
-              value={settings.take_profit_pct || ''}
-              onChange={(e) => onChange({ take_profit_pct: e.target.value ? Number(e.target.value) : undefined })}
+              value={settings.take_profit !== undefined ? settings.take_profit * 100 : ''}
+              onChange={(e) => onChange({ take_profit: e.target.value ? Number(e.target.value) / 100 : undefined })}
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500 outline-none transition-all"
             />
           </div>

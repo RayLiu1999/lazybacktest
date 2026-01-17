@@ -25,7 +25,7 @@ export interface StrategySettings {
 
 // 交易設定
 export interface TradingSettings {
-  timing: 'N_CLOSE' | 'N_PLUS_1_OPEN';
+  timing: 'N_CLOSE' | 'N1_OPEN';  // 匹配後端
   buy_fee: number;
   sell_fee: number;
   tax: number;
@@ -35,8 +35,8 @@ export interface TradingSettings {
 export interface RiskSettings {
   position_basis: 'INITIAL_CAPITAL' | 'TOTAL_CAPITAL';
   position_pct: number;
-  stop_loss_pct?: number;
-  take_profit_pct?: number;
+  stop_loss?: number;  // 匹配後端欄位名
+  take_profit?: number;
 }
 
 // 回測請求
@@ -85,6 +85,28 @@ export interface BacktestResult extends PerformanceMetrics {
   ticker: string;
   trades: Trade[];
   equity_curve: { date: string; equity: number; drawdown: number }[];
-  monthly_returns?: { year: number; month: number; return: number }[]; // Phase 8 for heatmap
-  yearly_returns?: { year: number; return: number }[]; // Phase 8 for bar chart
+  buy_hold_return?: number;  // Phase 8
+  monthly_returns?: { year: number; month: number; return: number }[];
+  yearly_returns?: Record<number, number>;  // { 2024: 0.15, 2025: 0.20 }
+}
+
+// 參數優化請求
+export interface OptimizationRequest {
+  ticker: string;
+  start_date: string;
+  end_date: string;
+  initial_capital: number;
+  entry_strategy: string;
+  param_ranges: Record<string, number[]>;
+}
+
+// 參數優化結果
+export interface OptimizationResult {
+  ticker: string;
+  strategy: string;
+  results_count: number;
+  results: {
+    params: Record<string, number>;
+    metrics: PerformanceMetrics;
+  }[];
 }

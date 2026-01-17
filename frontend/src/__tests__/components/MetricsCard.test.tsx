@@ -12,7 +12,12 @@ const mockResult: BacktestResult = {
   total_trades: 10,
   final_capital: 115000,
   trades: [],
-  equity_curve: [100000, 105000, 110000, 115000],
+  equity_curve: [
+    { date: '2024-01-01', equity: 100000, drawdown: 0 },
+    { date: '2024-01-02', equity: 105000, drawdown: 0 },
+    { date: '2024-01-03', equity: 110000, drawdown: 0 },
+    { date: '2024-01-04', equity: 115000, drawdown: 0 },
+  ],
 };
 
 describe('MetricsCard', () => {
@@ -30,19 +35,19 @@ describe('MetricsCard', () => {
 
     it('應該顯示年化報酬率', () => {
       render(<MetricsCard result={mockResult} />);
-      expect(screen.getByText('年化報酬率')).toBeInTheDocument();
+      expect(screen.getByText('年化報酬率 (CAGR)')).toBeInTheDocument();
       expect(screen.getByText('12.00%')).toBeInTheDocument();
     });
 
     it('應該顯示最大回撤', () => {
       render(<MetricsCard result={mockResult} />);
-      expect(screen.getByText('最大回撤')).toBeInTheDocument();
+      expect(screen.getByText('最大回撤 (MDD)')).toBeInTheDocument();
       expect(screen.getByText('8.00%')).toBeInTheDocument();
     });
 
-    it('應該顯示夏普比率 (Sharpe)', () => {
+    it('應該顯示夏普比率', () => {
       render(<MetricsCard result={mockResult} />);
-      expect(screen.getByText('夏普比率 (Sharpe)')).toBeInTheDocument();
+      expect(screen.getByText('夏普比率')).toBeInTheDocument();
     });
 
     it('應該顯示交易次數', () => {

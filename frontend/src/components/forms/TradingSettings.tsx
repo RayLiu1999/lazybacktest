@@ -35,8 +35,8 @@ const TradingSettings: React.FC<TradingSettingsProps> = ({ settings, onChange })
               <input
                 type="radio"
                 name="timing"
-                checked={settings.timing === 'N_PLUS_1_OPEN'}
-                onChange={() => onChange({ timing: 'N_PLUS_1_OPEN' })}
+                checked={settings.timing === 'N1_OPEN'}
+                onChange={() => onChange({ timing: 'N1_OPEN' })}
                 className="text-teal-500 focus:ring-teal-500"
               />
               <span className="text-sm text-gray-600">N+1日開盤</span>

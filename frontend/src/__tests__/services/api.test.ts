@@ -61,7 +61,7 @@ describe('API Service', () => {
         json: async () => mockResult
       });
       // Mock global fetch for runBacktest which uses fetch
-      global.fetch = vi.fn().mockResolvedValue({
+      globalThis.fetch = vi.fn().mockResolvedValue({
         ok: true,
         json: async () => mockResult
       });
@@ -93,7 +93,7 @@ describe('API Service', () => {
       const result = await runBacktest(request);
 
       // Verify fetch call arguments for transformed payload
-      expect(global.fetch).toHaveBeenCalledWith(
+      expect(globalThis.fetch).toHaveBeenCalledWith(
         expect.stringContaining('/backtest/run'),
         expect.objectContaining({
           method: 'POST',
