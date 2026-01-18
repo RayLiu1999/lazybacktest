@@ -78,7 +78,7 @@ export const runOptimization = async (request: OptimizationRequest): Promise<Opt
  * 健康檢查
  */
 export const healthCheck = async (): Promise<{ status: string; version: string }> => {
-  const response = await api.get('/health');
+  const response = await api.get('/api/v1/health');
   return response.data;
 };
 

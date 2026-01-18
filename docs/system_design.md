@@ -16,6 +16,38 @@
 
 ---
 
+## 2. 設計原則與模式 (Design Principles & Patterns)
+
+### 2.1 單一部位原則 (One Position at a Time)
+為了降低回測複雜度並模擬保守交易，系統採用「單一部位」邏輯。
+- **邏輯定義**: 
+  - `Position = 0`: 僅接受 **Entry Signal** (買入)。
+  - `Position > 0`: 僅接受 **Exit Signal** (賣出/平倉)。
+  - 若在持倉期間出現多次 Entry Signal，系統將**忽略**後續訊號，直到部位出清。
+- **目的**: 避免無限加碼 (Pyramiding) 導致的資金風險失控，專注於測試「進場點」與「出場點」的品質。
+
+### 2.2 進出場策略分離 (Separate Entry/Exit Strategy)
+系統架構允許將進場與出場邏輯完全解耦，實現高度客製化。
+- **Entry Strategy**: 負責決定何時買入 (如: `SMA 黃金交叉`).
+- **Exit Strategy**: 負責決定何時賣出 (如: `RSI 超買`).
+- **Default Behavior**: 若未指定 Exit Strategy，預設使用 Entry Strategy 的**反向邏輯** (如: SMA 死亡交叉)。
+- **Stop Loss / Take Profit**: 獨立於策略之外的全局保護機制，優先權高於技術指標。
+
+### 2.3 交易時機模型 (Execution Timing)
+支援兩種常見的交易執行報價模式：
+- **`N_CLOSE` (當日收盤價)**: 
+  - 訊號日 (T) 產生訊號 → **T 日收盤價**成交。
+  - 適用: 日 K 線收盤前確認訊號並立即下單的交易者。
+- **`N1_OPEN` (隔日開盤價)**:
+  - 訊號日 (T) 產生訊號 → **T+1 日開盤價**成交。
+  - 適用: 收盤後確認訊號，隔日開盤市價單進出的交易者 (最符合多數散戶實務)。
+
+### 2.4 資金管理模型 (Position Sizing)
+- **`INITIAL_CAPITAL` (固定本金)**: 每次交易投入金額為 `Initial Capital * %`。隨時間推移，投入金額固定，不隨帳戶淨值波動。
+- **`TOTAL_CAPITAL` (複利模式)**: 每次交易投入金額為 `Current Equity * %`。賺錢時加碼，賠錢時減碼，具備複利效應。
+
+---
+
 ## 2. 系統架構 (System Architecture)
 
 ### 技術堆疊 (Tech Stack)

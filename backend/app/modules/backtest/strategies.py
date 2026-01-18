@@ -5,6 +5,16 @@ from app.modules.backtest import indicators, signals
 class StrategyRegistry:
     """策略註冊中心，負責將策略名稱映射到具體的訊號產生邏輯"""
     
+    # 策略參數定義與預設值
+    _STRATEGY_DEFAULTS = {
+        "SMA_CROSS": {"short_period": 5, "long_period": 20},
+        "RSI_OVERSOLD": {"period": 14, "threshold": 30},
+        "MACD_CROSS": {"fast_period": 12, "slow_period": 26, "signal_period": 9},
+        "KD_CROSS": {"period": 9, "k_smooth": 3, "d_smooth": 3},
+        "BOLLINGER_BREAKOUT": {"period": 20, "std_dev": 2},
+        "PRICE_BREAKOUT": {"period": 20},
+    }
+    
     _STRATEGIES = {
         "SMA_CROSS": ["short_period", "long_period"],
         "RSI_OVERSOLD": ["period", "threshold"],
@@ -74,11 +84,11 @@ class StrategyRegistry:
         if strategy_name not in cls._STRATEGIES:
             raise ValueError(f"Unknown strategy: {strategy_name}")
 
-        # 檢查必要參數
-        required_params = cls._STRATEGIES[strategy_name]
-        for p in required_params:
-            if p not in params:
-                raise ValueError(f"Missing required parameter: {p}")
+        # 應用預設參數 (缺少的參數使用預設值)
+        defaults = cls._STRATEGY_DEFAULTS.get(strategy_name, {})
+        for key, default_value in defaults.items():
+            if key not in params:
+                params[key] = default_value
 
         if strategy_name == "SMA_CROSS":
             return cls._get_sma_cross_signals(data, params)
