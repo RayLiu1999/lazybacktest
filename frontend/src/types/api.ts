@@ -84,8 +84,12 @@ export interface PerformanceMetrics {
 export interface BacktestResult extends PerformanceMetrics {
   ticker: string;
   trades: Trade[];
-  equity_curve: { date: string; equity: number; drawdown: number }[];
+  equity_curve: { date: string; equity: number; return_pct: number; drawdown: number }[];
+  buy_hold_curve?: { date: string; equity: number; return_pct: number }[];  // Phase 11: 雙線對照
   buy_hold_return?: number;  // Phase 8
+  avg_trade_pnl?: number;  // Phase 11: 平均交易盈虧
+  max_consecutive_wins?: number;  // Phase 11: 最大連勝
+  max_consecutive_losses?: number;  // Phase 11: 最大連敗
   monthly_returns?: { year: number; month: number; return: number }[];
   yearly_returns?: Record<number, number>;  // { 2024: 0.15, 2025: 0.20 }
 }

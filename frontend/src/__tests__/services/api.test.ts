@@ -53,7 +53,7 @@ describe('API Service', () => {
         total_trades: 10,
         final_capital: 115000,
         trades: [],
-        equity_curve: [{ date: '2024-01-01', equity: 100000, drawdown: 0 }, { date: '2024-12-31', equity: 115000, drawdown: 0 }],
+        equity_curve: [{ date: '2024-01-01', equity: 100000, return_pct: 0, drawdown: 0 }, { date: '2024-12-31', equity: 115000, return_pct: 15, drawdown: 0 }],
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (mockPost as any).mockResolvedValueOnce({

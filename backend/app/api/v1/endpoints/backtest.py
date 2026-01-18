@@ -137,7 +137,8 @@ def run_backtest(
     # 計算進階指標
     from app.modules.backtest.metrics import (
         calculate_sharpe_ratio, calculate_sortino_ratio,
-        calculate_yearly_returns, calculate_monthly_returns, calculate_buy_hold_return
+        calculate_yearly_returns, calculate_monthly_returns, calculate_buy_hold_return,
+        calculate_average_trade, calculate_max_consecutive_wins, calculate_max_consecutive_losses
     )
     
     # 計算每日報酬率
@@ -147,6 +148,16 @@ def run_backtest(
     yearly_returns = calculate_yearly_returns(result.equity_curve)
     monthly_returns = calculate_monthly_returns(result.equity_curve)
     buy_hold_return = calculate_buy_hold_return(df)
+    
+    # 計算交易統計
+    profits = [t.profit for t in result.trades if t.profit is not None]
+    avg_trade_pnl = calculate_average_trade(profits)
+    max_consecutive_wins = calculate_max_consecutive_wins(profits)
+    max_consecutive_losses = calculate_max_consecutive_losses(profits)
+    
+    # 計算 Buy & Hold 淨值曲線 (用於雙線對照圖)
+    initial_price = df['close'].iloc[0]
+    buy_hold_equity = (df['close'] / initial_price) * request.initial_capital
 
     # 5. 回傳結果
     return {
@@ -158,6 +169,9 @@ def run_backtest(
         "sharpe_ratio": 0.0 if pd.isna(sharpe) or np.isinf(sharpe) else sharpe,
         "sortino_ratio": 0.0 if pd.isna(sortino) or np.isinf(sortino) else sortino,
         "buy_hold_return": buy_hold_return,
+        "avg_trade_pnl": avg_trade_pnl,
+        "max_consecutive_wins": max_consecutive_wins,
+        "max_consecutive_losses": max_consecutive_losses,
         "yearly_returns": yearly_returns,
         "monthly_returns": monthly_returns,
         "total_trades": result.total_trades,
@@ -175,8 +189,16 @@ def run_backtest(
             {
                 "date": date_idx.strftime("%Y-%m-%d"),
                 "equity": float(equity),
+                "return_pct": float((equity / request.initial_capital - 1) * 100),
                 "drawdown": float(0.0)
             } for date_idx, equity in result.equity_curve.items()
+        ],
+        "buy_hold_curve": [
+            {
+                "date": date_idx.strftime("%Y-%m-%d"),
+                "equity": float(equity),
+                "return_pct": float((equity / request.initial_capital - 1) * 100)
+            } for date_idx, equity in buy_hold_equity.items()
         ]
     }
 

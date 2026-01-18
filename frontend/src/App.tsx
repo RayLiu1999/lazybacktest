@@ -28,10 +28,12 @@ function App() {
       // Data transformer for API compatibility (if needed for old backend)
       // Ensure equity_curve is array of objects
       if (data.equity_curve && typeof data.equity_curve[0] === 'number') {
+        const initialEquity = data.equity_curve[0] as unknown as number;
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         data.equity_curve = (data.equity_curve as any as number[]).map((val: number, idx: number) => ({
           date: `Day ${idx + 1}`,
           equity: val,
+          return_pct: ((val / initialEquity) - 1) * 100,
           drawdown: 0 // Mock drawdown if missing
         }));
       }

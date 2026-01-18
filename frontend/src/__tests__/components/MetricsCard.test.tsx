@@ -13,10 +13,10 @@ const mockResult: BacktestResult = {
   final_capital: 115000,
   trades: [],
   equity_curve: [
-    { date: '2024-01-01', equity: 100000, drawdown: 0 },
-    { date: '2024-01-02', equity: 105000, drawdown: 0 },
-    { date: '2024-01-03', equity: 110000, drawdown: 0 },
-    { date: '2024-01-04', equity: 115000, drawdown: 0 },
+    { date: '2024-01-01', equity: 100000, return_pct: 0, drawdown: 0 },
+    { date: '2024-01-02', equity: 105000, return_pct: 5, drawdown: 0 },
+    { date: '2024-01-03', equity: 110000, return_pct: 10, drawdown: 0 },
+    { date: '2024-01-04', equity: 115000, return_pct: 15, drawdown: 0 },
   ],
 };
 

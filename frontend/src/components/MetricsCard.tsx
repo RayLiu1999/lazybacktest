@@ -18,6 +18,9 @@ const MetricsCard: React.FC<MetricsCardProps> = ({ result }) => {
     { label: '索提諾比率', value: result.sortino_ratio !== undefined ? result.sortino_ratio.toFixed(2) : '-', positive: (result.sortino_ratio ?? 0) > 0 },
     { label: '勝率', value: formatPercent(result.win_rate), positive: result.win_rate >= 0.5 },
     { label: '交易次數', value: result.total_trades.toString(), neutral: true },
+    { label: '平均交易盈虧', value: result.avg_trade_pnl !== undefined ? formatCurrency(result.avg_trade_pnl) : '-', positive: (result.avg_trade_pnl ?? 0) >= 0 },
+    { label: '最大連勝', value: result.max_consecutive_wins !== undefined ? `${result.max_consecutive_wins}次` : '-', neutral: true },
+    { label: '最大連敗', value: result.max_consecutive_losses !== undefined ? `${result.max_consecutive_losses}次` : '-', neutral: true },
     { label: '最終資金', value: formatCurrency(result.final_capital), positive: result.final_capital >= 100000 },
   ];
 

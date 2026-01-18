@@ -286,3 +286,55 @@ def calculate_buy_hold_return(data: pd.DataFrame) -> float:
         return 0.0
     
     return (data['close'].iloc[-1] / data['close'].iloc[0]) - 1
+
+
+def calculate_max_consecutive_wins(profits: list[float]) -> int:
+    """
+    計算最大連勝次數
+    
+    Args:
+        profits: 每筆交易的獲利列表
+        
+    Returns:
+        int: 最大連續獲利次數
+    """
+    if not profits:
+        return 0
+    
+    max_wins = 0
+    current_wins = 0
+    
+    for p in profits:
+        if p > 0:
+            current_wins += 1
+            max_wins = max(max_wins, current_wins)
+        else:
+            current_wins = 0
+    
+    return max_wins
+
+
+def calculate_max_consecutive_losses(profits: list[float]) -> int:
+    """
+    計算最大連敗次數
+    
+    Args:
+        profits: 每筆交易的獲利列表
+        
+    Returns:
+        int: 最大連續虧損次數
+    """
+    if not profits:
+        return 0
+    
+    max_losses = 0
+    current_losses = 0
+    
+    for p in profits:
+        if p < 0:
+            current_losses += 1
+            max_losses = max(max_losses, current_losses)
+        else:
+            current_losses = 0
+    
+    return max_losses
