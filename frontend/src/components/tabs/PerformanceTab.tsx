@@ -1,6 +1,7 @@
 import React from 'react';
 import type { BacktestResult } from '../../types/api';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import PeriodPerformanceTable from '../PeriodPerformanceTable';
 
 interface PerformanceTabProps {
   result: BacktestResult;
@@ -24,6 +25,14 @@ const PerformanceTab: React.FC<PerformanceTabProps> = ({ result }) => {
 
   return (
     <div className="space-y-6">
+      {/* 期間績效表 (Phase 11 P1) */}
+      {result.period_performance && result.period_performance.length > 0 && (
+        <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4">📊 期間績效分析</h3>
+          <PeriodPerformanceTable data={result.period_performance} />
+        </div>
+      )}
+
       {/* 年度報酬柱狀圖 */}
       <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">📊 年度報酬</h3>

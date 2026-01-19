@@ -21,6 +21,7 @@ const MetricsCard: React.FC<MetricsCardProps> = ({ result }) => {
     { label: '平均交易盈虧', value: result.avg_trade_pnl !== undefined ? formatCurrency(result.avg_trade_pnl) : '-', positive: (result.avg_trade_pnl ?? 0) >= 0 },
     { label: '最大連勝', value: result.max_consecutive_wins !== undefined ? `${result.max_consecutive_wins}次` : '-', neutral: true },
     { label: '最大連敗', value: result.max_consecutive_losses !== undefined ? `${result.max_consecutive_losses}次` : '-', neutral: true },
+    { label: '過擬合比率', value: result.overfitting_ratio?.return_ratio !== null && result.overfitting_ratio?.return_ratio !== undefined ? result.overfitting_ratio.return_ratio.toFixed(2) : '-', positive: (result.overfitting_ratio?.return_ratio ?? 0) >= 1, neutral: result.overfitting_ratio?.return_ratio === null },
     { label: '最終資金', value: formatCurrency(result.final_capital), positive: result.final_capital >= 100000 },
   ];
 

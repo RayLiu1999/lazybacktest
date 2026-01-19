@@ -138,7 +138,8 @@ def run_backtest(
     from app.modules.backtest.metrics import (
         calculate_sharpe_ratio, calculate_sortino_ratio,
         calculate_yearly_returns, calculate_monthly_returns, calculate_buy_hold_return,
-        calculate_average_trade, calculate_max_consecutive_wins, calculate_max_consecutive_losses
+        calculate_average_trade, calculate_max_consecutive_wins, calculate_max_consecutive_losses,
+        calculate_overfitting_ratio, calculate_period_performance
     )
     
     # 計算每日報酬率
@@ -158,6 +159,21 @@ def run_backtest(
     # 計算 Buy & Hold 淨值曲線 (用於雙線對照圖)
     initial_price = df['close'].iloc[0]
     buy_hold_equity = (df['close'] / initial_price) * request.initial_capital
+    
+    # 計算過度配適比率 (Phase 11 P1)
+    overfitting_ratio = calculate_overfitting_ratio(
+        strategy_return=result.total_return,
+        buy_hold_return=buy_hold_return,
+        strategy_sharpe=sharpe if not (pd.isna(sharpe) or np.isinf(sharpe)) else None,
+        buy_hold_sharpe=None  # Buy & Hold 的 Sharpe 需要額外計算，暫時不提供
+    )
+    
+    # 計算期間績效 (Phase 11 P1)
+    period_performance = calculate_period_performance(
+        equity_curve=result.equity_curve,
+        buy_hold_curve=buy_hold_equity,
+        initial_capital=request.initial_capital
+    )
 
     # 5. 回傳結果
     return {
@@ -199,7 +215,9 @@ def run_backtest(
                 "equity": float(equity),
                 "return_pct": float((equity / request.initial_capital - 1) * 100)
             } for date_idx, equity in buy_hold_equity.items()
-        ]
+        ],
+        "overfitting_ratio": overfitting_ratio,
+        "period_performance": period_performance
     }
 
 

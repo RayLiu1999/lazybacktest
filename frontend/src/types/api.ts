@@ -80,6 +80,22 @@ export interface PerformanceMetrics {
   avg_loss?: number;
 }
 
+// 過度配適比率
+export interface OverfittingRatio {
+  return_ratio: number | null;
+  sharpe_ratio: number | null;
+}
+
+// 期間績效
+export interface PeriodPerformance {
+  period: '1M' | '6M' | '1Y' | 'Total';
+  strategy_return: number;
+  buy_hold_return: number | null;
+  sharpe_ratio: number;
+  sortino_ratio: number;
+  max_drawdown: number;
+}
+
 // 回測結果
 export interface BacktestResult extends PerformanceMetrics {
   ticker: string;
@@ -90,6 +106,8 @@ export interface BacktestResult extends PerformanceMetrics {
   avg_trade_pnl?: number;  // Phase 11: 平均交易盈虧
   max_consecutive_wins?: number;  // Phase 11: 最大連勝
   max_consecutive_losses?: number;  // Phase 11: 最大連敗
+  overfitting_ratio?: OverfittingRatio;  // Phase 11 P1: 過度配適比率
+  period_performance?: PeriodPerformance[];  // Phase 11 P1: 期間績效
   monthly_returns?: { year: number; month: number; return: number }[];
   yearly_returns?: Record<number, number>;  // { 2024: 0.15, 2025: 0.20 }
 }

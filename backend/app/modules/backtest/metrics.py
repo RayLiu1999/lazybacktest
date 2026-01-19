@@ -338,3 +338,133 @@ def calculate_max_consecutive_losses(profits: list[float]) -> int:
             current_losses = 0
     
     return max_losses
+
+
+def calculate_overfitting_ratio(
+    strategy_return: float, 
+    buy_hold_return: float,
+    strategy_sharpe: float = None,
+    buy_hold_sharpe: float = None
+) -> dict:
+    """
+    計算過度配適比率 (Overfitting Ratio)
+    
+    用於檢測策略是否過度擬合歷史數據。
+    比率 > 1 表示策略優於市場，< 1 表示策略劣於市場。
+    
+    Args:
+        strategy_return: 策略總報酬率
+        buy_hold_return: 買入持有報酬率
+        strategy_sharpe: 策略夏普比率 (可選)
+        buy_hold_sharpe: 買入持有夏普比率 (可選)
+        
+    Returns:
+        dict: {"return_ratio": float, "sharpe_ratio": float}
+    """
+    # 報酬率比率
+    if buy_hold_return == 0:
+        return_ratio = np.inf if strategy_return > 0 else (0.0 if strategy_return == 0 else -np.inf)
+    else:
+        # 處理負報酬的情況：使用 (1 + strategy) / (1 + buy_hold)
+        return_ratio = (1 + strategy_return) / (1 + buy_hold_return)
+    
+    # 夏普比率比率 (如果提供)
+    sharpe_ratio = None
+    if strategy_sharpe is not None and buy_hold_sharpe is not None:
+        if buy_hold_sharpe == 0:
+            sharpe_ratio = np.inf if strategy_sharpe > 0 else 0.0
+        else:
+            sharpe_ratio = strategy_sharpe / buy_hold_sharpe if buy_hold_sharpe != 0 else None
+    
+    return {
+        "return_ratio": float(return_ratio) if not np.isinf(return_ratio) else None,
+        "sharpe_ratio": float(sharpe_ratio) if sharpe_ratio is not None and not np.isinf(sharpe_ratio) else None
+    }
+
+
+def calculate_period_performance(
+    equity_curve: pd.Series,
+    buy_hold_curve: pd.Series = None,
+    initial_capital: float = 100000
+) -> list[dict]:
+    """
+    計算期間績效 (1M/6M/1Y/總計)
+    
+    Args:
+        equity_curve: 策略淨值曲線 (index 為 datetime)
+        buy_hold_curve: 買入持有淨值曲線 (可選)
+        initial_capital: 初始資金
+        
+    Returns:
+        list[dict]: [
+            {"period": "1M", "strategy_return": 0.05, "buy_hold_return": 0.03, ...},
+            {"period": "6M", ...},
+            {"period": "1Y", ...},
+            {"period": "Total", ...}
+        ]
+    """
+    if equity_curve.empty:
+        return []
+    
+    # 確保 index 是 DatetimeIndex
+    if not isinstance(equity_curve.index, pd.DatetimeIndex):
+        equity_curve = equity_curve.copy()
+        equity_curve.index = pd.to_datetime(equity_curve.index)
+    
+    if buy_hold_curve is not None and not isinstance(buy_hold_curve.index, pd.DatetimeIndex):
+        buy_hold_curve = buy_hold_curve.copy()
+        buy_hold_curve.index = pd.to_datetime(buy_hold_curve.index)
+    
+    end_date = equity_curve.index[-1]
+    start_date = equity_curve.index[0]
+    total_days = (end_date - start_date).days
+    
+    periods = [
+        ("1M", 30),
+        ("6M", 180),
+        ("1Y", 365),
+        ("Total", total_days + 1)  # 確保包含整個期間
+    ]
+    
+    results = []
+    
+    for period_name, days in periods:
+        # 計算期間起始日期
+        period_start = end_date - pd.Timedelta(days=days)
+        
+        # 篩選期間內的數據
+        period_equity = equity_curve[equity_curve.index >= period_start]
+        
+        if len(period_equity) < 2:
+            continue
+        
+        # 策略報酬
+        start_val = period_equity.iloc[0]
+        end_val = period_equity.iloc[-1]
+        strategy_return = (end_val - start_val) / start_val
+        
+        # 買入持有報酬
+        buy_hold_return = None
+        if buy_hold_curve is not None:
+            period_bh = buy_hold_curve[buy_hold_curve.index >= period_start]
+            if len(period_bh) >= 2:
+                bh_start = period_bh.iloc[0]
+                bh_end = period_bh.iloc[-1]
+                buy_hold_return = (bh_end - bh_start) / bh_start
+        
+        # 計算其他指標
+        daily_returns = period_equity.pct_change().dropna()
+        sharpe = calculate_sharpe_ratio(daily_returns) if len(daily_returns) > 0 else 0.0
+        sortino = calculate_sortino_ratio(daily_returns) if len(daily_returns) > 0 else 0.0
+        max_dd = calculate_max_drawdown(period_equity)
+        
+        results.append({
+            "period": period_name,
+            "strategy_return": float(strategy_return),
+            "buy_hold_return": float(buy_hold_return) if buy_hold_return is not None else None,
+            "sharpe_ratio": float(sharpe) if not np.isinf(sharpe) and not np.isnan(sharpe) else 0.0,
+            "sortino_ratio": float(sortino) if not np.isinf(sortino) and not np.isnan(sortino) else 0.0,
+            "max_drawdown": float(max_dd)
+        })
+    
+    return results
