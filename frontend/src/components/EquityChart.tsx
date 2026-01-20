@@ -15,7 +15,6 @@ interface EquityChartProps {
   data: { date: string; equity: number; return_pct: number; drawdown: number }[];
   buyHoldData?: { date: string; equity: number; return_pct: number }[];
   trades?: Trade[];
-  initialCapital: number;
 }
 
 interface CustomTooltipProps {

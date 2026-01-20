@@ -53,7 +53,7 @@ function App() {
 
     switch (activeTab) {
       case 'SUMMARY':
-        return <SummaryTab result={result} initialCapital={lastRequest.initial_capital} />;
+        return <SummaryTab result={result} request={lastRequest} />;
       case 'PERFORMANCE':
         return <PerformanceTab result={result} />;
       case 'LOGS':

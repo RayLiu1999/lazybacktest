@@ -1,22 +1,4 @@
 services:
-  # PostgreSQL 資料庫
-  db:
-    image: postgres:16-alpine
-    container_name: lazybacktest-db
-    environment:
-      POSTGRES_USER: lazybacktest
-      POSTGRES_PASSWORD: lazybacktest123
-      POSTGRES_DB: lazybacktest
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U lazybacktest"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
   # FastAPI 後端
   backend:
     build:
@@ -24,16 +6,13 @@ services:
       dockerfile: Dockerfile
     container_name: lazybacktest-backend
     environment:
-      DATABASE_URL: postgresql://lazybacktest:lazybacktest123@db:5432/lazybacktest
+      DATABASE_URL: postgresql://postgres:123qwe@host.docker.internal:5432/lazybacktest
       REDIS_URL: ""
     volumes:
       - ./backend:/app
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     ports:
       - "8000:8000"
-    depends_on:
-      db:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -47,9 +26,6 @@ services:
       dockerfile: Dockerfile
     container_name: lazybacktest-frontend
     ports:
-      - "8080:80"
+      - "3123:80"
     depends_on:
       - backend
-
-volumes:
-  postgres_data:

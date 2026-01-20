@@ -160,6 +160,12 @@ def run_backtest(
     initial_price = df['close'].iloc[0]
     buy_hold_equity = (df['close'] / initial_price) * request.initial_capital
     
+    # 計算 Buy & Hold CAGR (使用與策略相同的年數計算)
+    from app.modules.backtest.metrics import calculate_cagr
+    total_days = (df.index[-1] - df.index[0]).days
+    years = total_days / 365.25
+    buy_hold_cagr = calculate_cagr(1, 1 + buy_hold_return, years)
+    
     # 計算過度配適比率 (Phase 11 P1)
     overfitting_ratio = calculate_overfitting_ratio(
         strategy_return=result.total_return,
@@ -185,6 +191,7 @@ def run_backtest(
         "sharpe_ratio": 0.0 if pd.isna(sharpe) or np.isinf(sharpe) else sharpe,
         "sortino_ratio": 0.0 if pd.isna(sortino) or np.isinf(sortino) else sortino,
         "buy_hold_return": buy_hold_return,
+        "buy_hold_cagr": buy_hold_cagr,
         "avg_trade_pnl": avg_trade_pnl,
         "max_consecutive_wins": max_consecutive_wins,
         "max_consecutive_losses": max_consecutive_losses,

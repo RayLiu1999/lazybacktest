@@ -103,6 +103,7 @@ export interface BacktestResult extends PerformanceMetrics {
   equity_curve: { date: string; equity: number; return_pct: number; drawdown: number }[];
   buy_hold_curve?: { date: string; equity: number; return_pct: number }[];  // Phase 11: 雙線對照
   buy_hold_return?: number;  // Phase 8
+  buy_hold_cagr?: number;  // Phase 11
   avg_trade_pnl?: number;  // Phase 11: 平均交易盈虧
   max_consecutive_wins?: number;  // Phase 11: 最大連勝
   max_consecutive_losses?: number;  // Phase 11: 最大連敗
