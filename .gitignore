@@ -73,3 +73,6 @@ yarn-error.log*
 
 # Agent/AI tools
 .agent/
+
+# Kubernetes secrets
+k8s/config-secret.yaml
