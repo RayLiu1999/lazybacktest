@@ -45,7 +45,10 @@ class StockRepository:
                 high=float(row['high']),
                 low=float(row['low']),
                 close=float(row['close']),
-                volume=int(row['volume'])
+                adj_close=float(row['adj_close']) if 'adj_close' in row and pd.notna(row['adj_close']) else None,
+                volume=int(row['volume']),
+                dividends=float(row['dividends']) if 'dividends' in row and pd.notna(row['dividends']) else 0.0,
+                stock_splits=float(row['stock_splits']) if 'stock_splits' in row and pd.notna(row['stock_splits']) else 0.0
             )
             stock_prices.append(price)
             
@@ -137,7 +140,10 @@ class StockRepository:
                 "high": p.high,
                 "low": p.low,
                 "close": p.close,
-                "volume": p.volume
+                "adj_close": p.adj_close,
+                "volume": p.volume,
+                "dividends": float(p.dividends) if p.dividends else 0.0,
+                "stock_splits": float(p.stock_splits) if p.stock_splits else 0.0
             }
             for p in prices
         ]

@@ -41,6 +41,13 @@ class BacktestConfig:
     timing: str = "N_CLOSE"  # N_CLOSE or N1_OPEN
     position_pct: float = 100.0
     position_basis: str = "INITIAL_CAPITAL"  # INITIAL_CAPITAL or TOTAL_CAPITAL
+    
+    # 新增回測相關設定
+    use_adjusted_price: bool = True  # 是否使用還原股價
+    slippage: float = 0.001  # 滑價 (預設 0.1%)
+    min_commission: float = 20.0  # 最低手續費
+    reinvest_dividends: bool = True  # 股息是否再投入
+    day_trade_tax_discount: bool = True  # 當沖證交稅減半 (預設啟用)
 
 
 @dataclass
@@ -114,6 +121,75 @@ class BacktestEngine:
         self.entry_price = 0.0  # 買入價格（用於停損停利計算）
         self.trades: list[Trade] = []
         self._equity_curve: list[float] = []
+
+    def _get_price(self, row: pd.Series, price_type: str) -> float:
+        """
+        根據配置選擇使用原始價或還原價
+        
+        Args:
+            row: 包含股價資料的 Series
+            price_type: 價格類型 ('open', 'high', 'low', 'close')
+            
+        Returns:
+            float: 調整後的價格
+        """
+        if self.config.use_adjusted_price and 'adj_close' in row and pd.notna(row['adj_close']):
+            # 使用還原價比例調整 OHLC
+            # 注意: 若 adj_close 與 close 差異過大 (可能是資料錯誤), 應保持警覺, 這邊假設資料正確
+            adj_ratio = row['adj_close'] / row['close'] if row['close'] != 0 else 1.0
+            
+            if price_type == 'close':
+                return row['adj_close']
+            else:
+                return row[price_type] * adj_ratio
+        else:
+            return row[price_type]
+
+    def _calculate_fee(self, price: float, quantity: int, is_buy: bool) -> float:
+        """
+        計算手續費 (區分整股與零股,並考慮最低手續費)
+        
+        Args:
+            price: 成交價格
+            quantity: 成交數量
+            is_buy: 是否為買入
+            
+        Returns:
+            float: 手續費金額
+        """
+        cost = price * quantity
+        
+        if quantity < 1000:  # 零股
+            # 零股手續費費率通常較高或相同, 這裡假設相同但有最低限制
+            # 視券商而定,有些券商零股手續費較優惠,有些則不然
+            # 這裡採用: 費率相同, 但有最低手續費限制
+            fee_rate = self.config.buy_fee if is_buy else self.config.sell_fee
+        else:  # 整股
+            fee_rate = self.config.buy_fee if is_buy else self.config.sell_fee
+        
+        fee = cost * fee_rate
+        return max(fee, self.config.min_commission)
+
+    def _calculate_tax(self, price: float, quantity: int, is_day_trade: bool = False) -> float:
+        """
+        計算證券交易稅
+        
+        Args:
+            price: 成交價格
+            quantity: 成交數量
+            is_day_trade: 是否為當沖交易
+            
+        Returns:
+            float: 證券交易稅金額
+        """
+        proceeds = price * quantity
+        tax_rate = self.config.tax
+        
+        if is_day_trade and self.config.day_trade_tax_discount:
+            # 當沖稅率減半 (通常是 0.15%)
+            tax_rate = tax_rate / 2
+            
+        return proceeds * tax_rate
     
     def buy(self, price: float, quantity: int, date: datetime) -> None:
         """
@@ -127,9 +203,14 @@ class BacktestEngine:
         Raises:
             ValueError: 資金不足時拋出
         """
+        # 考慮滑價
+        execution_price = price * (1 + self.config.slippage)
+        
         # 計算成本（含手續費）
-        cost = price * quantity
-        fee = cost * self.config.buy_fee
+        cost = execution_price * quantity
+        
+        # 使用新的手續費計算方法
+        fee = self._calculate_fee(execution_price, quantity, is_buy=True)
         total_cost = cost + fee
         
         # 檢查資金是否足夠
@@ -140,13 +221,13 @@ class BacktestEngine:
         # 執行買入
         self.cash -= total_cost
         self.position += quantity
-        self.entry_price = price
+        self.entry_price = execution_price  # 記錄實際成交價
         
         # 記錄交易
         trade = Trade(
             date=date,
             action="BUY",
-            price=price,
+            price=execution_price,
             quantity=quantity,
             fee=fee
         )
@@ -171,10 +252,21 @@ class BacktestEngine:
         if quantity > self.position:
             raise ValueError(f"Cannot sell {quantity}, only have {self.position}")
         
+        # 考慮滑價
+        execution_price = price * (1 - self.config.slippage)
+        
         # 計算收入（扣除手續費和證交稅）
-        proceeds = price * quantity
-        fee = proceeds * self.config.sell_fee
-        tax = proceeds * self.config.tax
+        proceeds = execution_price * quantity
+        
+        # 使用新的計算方法
+        fee = self._calculate_fee(execution_price, quantity, is_buy=False)
+        
+        # 判斷是否為當沖 (簡單判斷: 同一天買賣)
+        # 注意: 這裡需要記錄買入日期才能準確判斷。目前架構暫不支援準確的當沖判斷。
+        # 先假設非當沖，後續可增強 Trade 紀錄來支援。
+        is_day_trade = False 
+        
+        tax = self._calculate_tax(execution_price, quantity, is_day_trade=is_day_trade)
         net_proceeds = proceeds - fee - tax
         
         # 計算獲利
@@ -193,7 +285,7 @@ class BacktestEngine:
         trade = Trade(
             date=date,
             action="SELL",
-            price=price,
+            price=execution_price,
             quantity=quantity,
             fee=fee,
             tax=tax,
@@ -242,7 +334,7 @@ class BacktestEngine:
         return self.cash + self.position * current_price
 
     def _get_available_capital(self, current_price: float) -> float:
-        """計算可用於交易的資金，依據 position_pct 和 position_basis"""
+        """計算可用於交易的資金, 依據 position_pct 和 position_basis"""
         if self.config.position_basis == "INITIAL_CAPITAL":
             base = self.config.initial_capital
         else:  # TOTAL_CAPITAL
@@ -281,8 +373,29 @@ class BacktestEngine:
             else:
                 date = pd.to_datetime(index_val)
 
-            close = row['close']
-            open_price = row['open']
+            # 使用 _get_price 獲取價格 (支援還原股價)
+            close = self._get_price(row, 'close')
+            open_price = self._get_price(row, 'open')
+            # high = self._get_price(row, 'high') # 暫未用到
+            # low = self._get_price(row, 'low')   # 暫未用到
+            
+            # 處理股息再投入
+            if self.config.reinvest_dividends and 'dividends' in row and pd.notna(row['dividends']) and row['dividends'] > 0:
+                # 只有持有部位時才能領取股息
+                if self.position > 0:
+                    total_dividend = row['dividends'] * self.position
+                    self.cash += total_dividend
+                    
+                    # 記錄股息收入 (新增 Trade 類型: DIVIDEND)
+                    # 注意: Trade dataclass 可能需要修改以支援 action="DIVIDEND" 且 quantity=0 或 quantity=持倉量
+                    # 這裡記錄 quantity=持倉量, price=配息金額, profit=總股息
+                    self.trades.append(Trade(
+                        date=date,
+                        action="DIVIDEND",
+                        price=row['dividends'],
+                        quantity=self.position,
+                        profit=total_dividend
+                    ))
             
             # N1_OPEN: 執行昨日的待辦訂單
             if self.config.timing == "N1_OPEN":
@@ -291,7 +404,9 @@ class BacktestEngine:
                     pending_exit = False
                 if pending_entry and self.position == 0:
                     available = self._get_available_capital(open_price)
-                    max_quantity = int(available / (open_price * (1 + self.config.buy_fee)))
+                    # 考慮滑價與手續費預留
+                    estimated_price = open_price * (1 + self.config.slippage)
+                    max_quantity = int(available / (estimated_price * (1 + self.config.buy_fee)))
                     max_quantity = (max_quantity // 100) * 100
                     if max_quantity > 0:
                         self.buy(open_price, max_quantity, date)
@@ -319,7 +434,9 @@ class BacktestEngine:
             if self.position == 0 and entry_signal.iloc[i] and not pending_entry:
                 if self.config.timing == "N_CLOSE":
                     available = self._get_available_capital(close)
-                    max_quantity = int(available / (close * (1 + self.config.buy_fee)))
+                    # 考慮滑價與手續費預留
+                    estimated_price = close * (1 + self.config.slippage)
+                    max_quantity = int(available / (estimated_price * (1 + self.config.buy_fee)))
                     max_quantity = (max_quantity // 100) * 100
                     if max_quantity > 0:
                         self.buy(close, max_quantity, date)

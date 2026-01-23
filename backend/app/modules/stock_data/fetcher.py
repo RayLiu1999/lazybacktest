@@ -51,16 +51,27 @@ class StockDataFetcher:
                 return pd.DataFrame()
             
             # yfinance 欄位: Open, High, Low, Close, Volume, Dividends, Stock Splits
+            # 重新命名並保留完整資料 (包含 Adj Close, Dividends, Stock Splits)
             df = df.rename(columns={
                 "Open": "open",
                 "High": "high",
                 "Low": "low",
                 "Close": "close",
-                "Volume": "volume"
+                "Volume": "volume",
+                "Dividends": "dividends",
+                "Stock Splits": "stock_splits"
             })
             
-            # 選取需要的欄位
-            df = df[["open", "high", "low", "close", "volume"]]
+            # 計算 adj_close (yfinance 不直接提供,需透過 Close 與除權息調整)
+            # 若 yfinance 有提供 Adj Close,則直接使用
+            if "Adj Close" in stock.history(start=start_date, end=end_date).columns:
+                df["adj_close"] = stock.history(start=start_date, end=end_date)["Adj Close"].values
+            else:
+                # Fallback: 使用 close 作為 adj_close
+                df["adj_close"] = df["close"]
+            
+            # 選取需要的欄位 (保留完整資料)
+            df = df[["open", "high", "low", "close", "adj_close", "volume", "dividends", "stock_splits"]]
             
             # 確保 index 名稱統一
             df.index.name = "date"

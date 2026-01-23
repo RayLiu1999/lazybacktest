@@ -39,6 +39,10 @@ class StockPrice(Base):
     close = Column(Float, nullable=False)
     adj_close = Column(Float, nullable=True)
     volume = Column(BigInteger, nullable=False)
+    
+    # 新增: 股息與股票分割資料
+    dividends = Column(DECIMAL(10, 4), nullable=True, default=0)
+    stock_splits = Column(DECIMAL(10, 4), nullable=True, default=0)
 
     # 關聯
     stock = relationship("Stock", back_populates="prices")
