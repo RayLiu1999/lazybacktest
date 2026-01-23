@@ -6,10 +6,11 @@ from fastapi import APIRouter
 api_router = APIRouter()
 
 # 這裡未來會掛載 stocks, backtest 等路由
-from app.api.v1.endpoints import stocks, backtest
+from app.api.v1.endpoints import stocks, backtest, feedback
 
 api_router.include_router(stocks.router, prefix="/stocks", tags=["stocks"])
 api_router.include_router(backtest.router, prefix="/backtest", tags=["backtest"])
+api_router.include_router(feedback.router, prefix="/feedback", tags=["feedback"])
 
 @api_router.get("/health")
 def health_check():

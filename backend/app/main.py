@@ -16,14 +16,23 @@ app = FastAPI(
     version="0.1.0",
 )
 
+import os
+
 # CORS 設定
-origins = [
-    "http://localhost:3000",  # React Dev Server (CRA)
-    "http://localhost:5173",  # Vite Dev Server
-    "http://localhost:8000",
-    "http://127.0.0.1:5173",
-    "http://127.0.0.1:8000",
-]
+cors_origins_str = os.getenv("BACKEND_CORS_ORIGINS", "")
+if cors_origins_str:
+    origins = [origin.strip() for origin in cors_origins_str.split(",")]
+else:
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://localhost:3123",
+        "http://localhost:8000",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://127.0.0.1:3123",
+        "http://127.0.0.1:8000",
+    ]
 
 app.add_middleware(
     CORSMiddleware,

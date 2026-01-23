@@ -4,6 +4,8 @@ import SummaryTab from './components/tabs/SummaryTab';
 import TradeLogsTab from './components/tabs/TradeLogsTab';
 import OptimizationTab from './components/tabs/OptimizationTab';
 import PerformanceTab from './components/tabs/PerformanceTab';
+import TutorialModal from './components/TutorialModal';
+import FeedbackModal from './components/FeedbackModal';
 import type { BacktestRequest, BacktestResult } from './types/api';
 import { runBacktest } from './services/api';
 
@@ -15,6 +17,8 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('SUMMARY');
   const [lastRequest, setLastRequest] = useState<BacktestRequest | null>(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
 
   const handleSubmit = async (request: BacktestRequest) => {
     setIsLoading(true);
@@ -83,11 +87,10 @@ function App() {
             LB
           </div>
           <span className="text-xl font-bold text-gray-800 tracking-tight">LazyBacktest</span>
-          <span className="text-xs px-2 py-0.5 bg-teal-50 text-teal-600 rounded-full border border-teal-100 font-medium">Phase 7 UI</span>
         </div>
         <div className="ml-auto text-sm text-gray-500 flex gap-4">
-          <a href="#" className="hover:text-teal-600 transition-colors">使用教學</a>
-          <a href="#" className="hover:text-teal-600 transition-colors">問題回報</a>
+          <button onClick={() => setShowTutorial(true)} className="hover:text-teal-600 transition-colors">使用教學</button>
+          <button onClick={() => setShowFeedback(true)} className="hover:text-teal-600 transition-colors">問題回報</button>
         </div>
       </header>
 
@@ -211,6 +214,10 @@ function App() {
           )}
         </main>
       </div>
+
+      {/* Modals */}
+      <TutorialModal isOpen={showTutorial} onClose={() => setShowTutorial(false)} />
+      <FeedbackModal isOpen={showFeedback} onClose={() => setShowFeedback(false)} />
     </div>
   );
 }
