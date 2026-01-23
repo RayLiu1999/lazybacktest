@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: lazybacktest-ingress
+  annotations:
+    kubernetes.io/ingress.class: traefik # K3s 預設使用 Traefik
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: lazybacktest-backend
+                port:
+                  number: 8000
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: lazybacktest-frontend
+                port:
+                  number: 80
