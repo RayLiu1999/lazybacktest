@@ -14,7 +14,8 @@ spec:
     spec:
       containers:
         - name: frontend
-          image: your-registry/lazybacktest-frontend:latest # 使用者需替換為實際 image
+          image: lazybacktest-frontend:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 80
 ---

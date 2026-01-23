@@ -14,17 +14,48 @@ spec:
     spec:
       containers:
         - name: backend
-          image: your-registry/lazybacktest-backend:latest # 使用者需替換為實際 image
+          image: lazybacktest-backend:latest
+          imagePullPolicy: Never
           ports:
             - containerPort: 8000
           env:
+            - name: BACKEND_HOST
+              valueFrom:
+                secretKeyRef:
+                  name: lazybacktest-secret
+                  key: BACKEND_HOST
+            - name: BACKEND_PORT
+              valueFrom:
+                secretKeyRef:
+                  name: lazybacktest-secret
+                  key: BACKEND_PORT
             - name: DATABASE_URL
               valueFrom:
                 secretKeyRef:
                   name: lazybacktest-secret
                   key: DATABASE_URL
             - name: REDIS_URL
-              value: "" # 如有需要可透過 ConfigMap 設定
+              valueFrom:
+                secretKeyRef:
+                  name: lazybacktest-secret
+                  key: REDIS_URL
+            - name: LINE_CHANNEL_ACCESS_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: lazybacktest-secret
+                  key: LINE_CHANNEL_ACCESS_TOKEN
+            - name: LINE_USER_ID
+              valueFrom:
+                secretKeyRef:
+                  name: lazybacktest-secret
+                  key: LINE_USER_ID
+          resources:
+            requests:
+              cpu: "100m"
+              memory: "256Mi"
+            limits:
+              cpu: "1000m"
+              memory: "1Gi"
           livenessProbe:
             httpGet:
               path: /health
