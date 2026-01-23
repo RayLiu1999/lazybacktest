@@ -191,3 +191,37 @@ def bollinger_bands(
     lower_band = middle_band - (std * std_dev)
     
     return upper_band, middle_band, lower_band
+
+
+def turtle_channel(
+    high: pd.Series,
+    low: pd.Series,
+    period: int = 20
+) -> tuple[pd.Series, pd.Series]:
+    """
+    計算海龜通道（唐奇安通道）
+    
+    海龜交易法則使用的通道指標：
+    - 上軌 = 過去 N 日最高價
+    - 下軌 = 過去 N 日最低價
+    
+    Args:
+        high: 最高價序列
+        low: 最低價序列
+        period: 計算週期 (預設 20)
+        
+    Returns:
+        tuple: (上軌, 下軌)
+        
+    Example:
+        >>> entry_channel = turtle_channel(high, low, 20)
+        >>> exit_channel = turtle_channel(high, low, 10)
+    """
+    if period <= 0:
+        raise ValueError(f"Period must be positive, got {period}")
+    
+    upper = high.rolling(window=period).max()
+    lower = low.rolling(window=period).min()
+    
+    return upper, lower
+

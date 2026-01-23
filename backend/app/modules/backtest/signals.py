@@ -180,3 +180,36 @@ def macd_cross_down(dif: pd.Series, macd_signal: pd.Series) -> pd.Series:
         pd.Series[bool]: 死叉位置為 True
     """
     return death_cross(dif, macd_signal)
+
+
+def price_cross_above_sma(close: pd.Series, sma_values: pd.Series) -> pd.Series:
+    """
+    偵測價格向上穿越 SMA
+    
+    當收盤價從下方穿越 SMA 向上時，產生買入訊號。
+    
+    Args:
+        close: 收盤價序列
+        sma_values: SMA 值序列
+        
+    Returns:
+        pd.Series[bool]: 穿越位置為 True
+    """
+    return golden_cross(close, sma_values)
+
+
+def price_cross_below_sma(close: pd.Series, sma_values: pd.Series) -> pd.Series:
+    """
+    偵測價格向下跌破 SMA
+    
+    當收盤價從上方穿越 SMA 向下時，產生賣出訊號。
+    
+    Args:
+        close: 收盤價序列
+        sma_values: SMA 值序列
+        
+    Returns:
+        pd.Series[bool]: 穿越位置為 True
+    """
+    return death_cross(close, sma_values)
+
