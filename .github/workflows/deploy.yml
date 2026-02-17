@@ -1,0 +1,70 @@
+# 主要部署流程 — 由 main branch push 觸發
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  # ── Stage 1: 後端測試 ──
+  backend-test:
+    name: Backend Test
+    uses: ./.github/workflows/backend-test.yml
+
+  # ── Stage 2: 建置 GHCR 映像（測試通過後平行執行）──
+  backend-ghcr:
+    name: Backend GHCR
+    needs: [backend-test]
+    uses: ./.github/workflows/backend-ghcr.yml
+    permissions:
+      contents: read
+      packages: write
+
+  frontend-ghcr:
+    name: Frontend GHCR
+    needs: [backend-test]
+    uses: ./.github/workflows/frontend-ghcr.yml
+    permissions:
+      contents: read
+      packages: write
+
+  # ── Stage 3: 更新 ops repo image tag ──
+  update-ops-tag:
+    name: Update Ops Repo Tag
+    needs: [backend-ghcr, frontend-ghcr]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout ops repo
+        uses: actions/checkout@v4
+        with:
+          repository: RayLiu1999/side_project_ops
+          token: ${{ secrets.OPS_REPO_PAT }}
+
+      - name: Set up Kustomize
+        uses: imranismail/setup-kustomize@v2
+
+      - name: Config git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update backend image tag
+        run: |
+          cd projects/lazybacktest/backend
+          kustomize edit set image ghcr.io/rayliu1999/lazybacktest-backend=ghcr.io/rayliu1999/lazybacktest-backend:sha-${{ github.sha }}
+
+      - name: Update frontend image tag
+        run: |
+          cd projects/lazybacktest/frontend
+          kustomize edit set image ghcr.io/rayliu1999/lazybacktest-frontend=ghcr.io/rayliu1999/lazybacktest-frontend:sha-${{ github.sha }}
+
+      - name: Commit and push
+        run: |
+          git add -A
+          git diff --staged --quiet && echo "No changes" && exit 0
+          git commit -m "chore(lazybacktest): update image tag to sha-${{ github.sha }}"
+          git push
