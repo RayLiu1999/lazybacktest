@@ -12,8 +12,6 @@ services:
       # 使用nginx同network連container，所以不需要填此項
       BACKEND_CORS_ORIGINS: ""
       REDIS_URL: ""
-    ports:
-      - "${HOST_IP:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
