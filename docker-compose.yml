@@ -6,7 +6,11 @@ services:
       dockerfile: Dockerfile
     container_name: lazybacktest-backend
     environment:
-      DATABASE_URL: postgresql://postgres:123qwe@host.docker.internal:5432/lazybacktest
+      DATABASE_URL: ${DATABASE_URL:-"postgresql://user:password@db:5432/lazybacktest"}
+      LINE_CHANNEL_ACCESS_TOKEN: ${LINE_CHANNEL_ACCESS_TOKEN:-""}
+      LINE_USER_ID: ${LINE_USER_ID:-""}
+      # 使用nginx同network連container，所以不需要填此項
+      BACKEND_CORS_ORIGINS: ""
       REDIS_URL: ""
     env_file:
       - ./backend/.env
